@@ -1,0 +1,4 @@
+#pragma once
+
+#define NOCTSH_VERSION_MAJOR 0
+#define NOCTSH_VERSION_MINOR 1

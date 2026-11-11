@@ -1,0 +1,29 @@
+#include <stdlib.h>
+#include <string.h>
+#include "noctsh_string.h"
+
+void noctsh_string_from_charptr(noctsh_string_t *string, char *str) {
+    size_t length = strlen(str);
+
+    char* buf = malloc(length + 1);
+
+    memcpy(buf, str, length);
+
+    buf[length] = 0;
+
+    string->_m_buffer = buf;
+    string->_m_length = length;
+}
+
+void noctsh_string_append(noctsh_string_t *string, char *str) {
+    size_t raw_str_len = strlen(str);
+
+    char* new_buf = realloc(string->_m_buffer, string->_m_length + raw_str_len + 1);
+
+    memcpy(new_buf + string->_m_length, str, raw_str_len);
+
+    string->_m_buffer = new_buf;
+    string->_m_length += raw_str_len;
+
+    new_buf[string->_m_length] = 0;
+}
