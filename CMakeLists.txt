@@ -10,6 +10,7 @@ add_executable(noctsh
     src/string.c
     include/noctsh_vector.h
     include/noctsh_option.h
+    src/vector.c
 )
 
 target_include_directories(noctsh PRIVATE ${CMAKE_SOURCE_DIR}/include)

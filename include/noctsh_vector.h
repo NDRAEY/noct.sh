@@ -10,6 +10,8 @@
 #define noctsh_vector_get(vec, T, index) _noctsh_vector_get(vec, sizeof(T), index)
 #define noctsh_vector_push(vec, T, element) _noctsh_vector_push(vec, sizeof(T), ({ T t = element; (void*)(&t); }))
 #define noctsh_vector_len(vec) ((&vec)->_m_length)
+
+/// Iterator for `noctsh_vector_t`. 
 #define noctsh_vector_iter(vec, T) for( \
     struct { size_t __index, __len; T* __element } __iter = { .__index = 0, .__len = (vec)->_m_length, .__element = ((T*)((vec)->_m_buffer)) }; \
     __iter.__index < __iter.__len; \
