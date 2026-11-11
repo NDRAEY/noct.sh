@@ -27,3 +27,19 @@ void noctsh_string_append(noctsh_string_t *string, char *str) {
 
     new_buf[string->_m_length] = 0;
 }
+
+void noctsh_string_push_char(noctsh_string_t* string, char ch) {
+    char* new_buf = realloc(string->_m_buffer, string->_m_length + 1 + 1);
+
+    new_buf[string->_m_length++] = ch;
+    new_buf[string->_m_length] = 0;
+
+    string->_m_buffer = new_buf;
+}
+
+void noctsh_string_free(noctsh_string_t* string) {
+    free(string->_m_buffer);
+
+    string->_m_buffer = NULL;
+    string->_m_length = 0;
+}
