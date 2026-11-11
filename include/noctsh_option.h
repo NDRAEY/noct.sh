@@ -8,4 +8,6 @@ typedef struct {
 } noctsh_option_t;
 
 #define NOCTSH_OPTION_SOME(e) ((noctsh_option_t) { ._m_is_present = true, ._m_element_ref = e })
-#define NOCTSH_OPTION_NONE ((noctsh_option_t) { ._m_is_present = false })
+#define NOCTSH_OPTION_NONE ((noctsh_option_t) { ._m_is_present = false, ._m_element_ref = NULL })
+
+#define NOCTSH_OPTION_UNWRAP(op) ({ assert(op._m_is_present); op._m_element_ref; })
