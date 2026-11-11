@@ -9,6 +9,7 @@
 
 #define noctsh_vector_get(vec, T, index) _noctsh_vector_get(vec, sizeof(T), index)
 #define noctsh_vector_push(vec, T, element) _noctsh_vector_push(vec, sizeof(T), (void*)(&element))
+#define noctsh_vector_len(vec) ((&vec)->_m_length)
 
 typedef struct {
     void* _m_buffer;

@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "noctsh_vector.h"
 
 noctsh_option_t _noctsh_vector_get(noctsh_vector_t* vec, size_t _element_size, size_t index) {
@@ -13,11 +14,15 @@ noctsh_option_t _noctsh_vector_get(noctsh_vector_t* vec, size_t _element_size, s
     size_t byte_offset_end = _element_size * (index + 1);
 
     size_t vec_size = vec->_m_length * _element_size;
+    
+    printf("%zu - %zu (%zu)\n", byte_offset, byte_offset_end, vec_size);
 
-    if(byte_offset < vec_size && byte_offset_end < vec_size) {
+    if(byte_offset < vec_size && byte_offset_end <= vec_size) {
         size_t addr = (size_t)vec->_m_buffer;
 
         void* element = (void*)(addr + byte_offset);
+
+        printf("Element at %p\n", element);
 
         return NOCTSH_OPTION_SOME(element);
     }
@@ -35,5 +40,10 @@ void _noctsh_vector_push(noctsh_vector_t* vec, size_t _element_size, void* eleme
 
     assert(new_buffer != NULL);
 
+    printf("Copying %p <%zu> to %p\n", element, _element_size, (void*)((size_t)new_buffer + vec_size));
+
     memcpy((void*)((size_t)new_buffer + vec_size), element, _element_size);
+
+    vec->_m_buffer = new_buffer;
+    vec->_m_length += 1;
 }
