@@ -25,3 +25,4 @@ typedef struct {
 
 noctsh_option_t _noctsh_vector_get(noctsh_vector_t* vec, size_t _element_size, size_t index);
 void _noctsh_vector_push(noctsh_vector_t* vec, size_t _element_size, void* element);
+void noctsh_vector_free(noctsh_vector_t* vec);

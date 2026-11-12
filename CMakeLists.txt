@@ -13,4 +13,6 @@ add_executable(noctsh
     src/vector.c
 )
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
+
 target_include_directories(noctsh PRIVATE ${CMAKE_SOURCE_DIR}/include)
