@@ -1,189 +1,154 @@
+#include <errno.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/wait.h>
+#include <unistd.h>
 
 #include "noctsh.h"
 #include "noctsh_option.h"
 #include "noctsh_string.h"
 #include "noctsh_vector.h"
+#include "run.h"
 
 size_t request_input_string(char *out_buffer, size_t maxlength) {
-	size_t cursor = 0;
+  size_t cursor = 0;
 
-	while (1) {
-		if (cursor > maxlength) {
-			return cursor;
-		}
+  while (1) {
+    if (cursor > maxlength) {
+      return cursor;
+    }
 
-		int character = fgetc(stdin);
+    int character = fgetc(stdin);
 
-		if (character == -1) {
-			return (size_t)(-1);
-		}
+    if (character == -1) {
+      return (size_t)(-1);
+    }
 
-		if (character == '\n') {
-			break;
-		}
+    if (character == '\n') {
+      break;
+    }
 
-		if (character == '\b') {
-			if (cursor > 0) {
-				out_buffer[cursor--] = 0;
-			}
+    if (character == '\b') {
+      if (cursor > 0) {
+        out_buffer[cursor--] = 0;
 
-			continue;
-		}
+        fputc(' ', stdout);
+        fputc('\b', stdout);
 
-		out_buffer[cursor++] = character;
-	}
+#if __nocturne__
+        fflush(stdout);
+#endif
+      }
 
-	out_buffer[cursor] = 0;
+      continue;
+    }
 
-	return cursor;
+    out_buffer[cursor++] = character;
+  }
+
+  out_buffer[cursor] = 0;
+
+  return cursor;
 }
 
 noctsh_vector_t parse_cmdline(const char *cmdline) {
-	noctsh_vector_t vec = {};
+  noctsh_vector_t vec = {};
 
-	noctsh_string_t stem = {};
+  noctsh_string_t stem = {};
 
-	for (size_t i = 0, len = strlen(cmdline); i < len; i++) {
-		char ch = cmdline[i];
+  for (size_t i = 0, len = strlen(cmdline); i < len; i++) {
+    char ch = cmdline[i];
 
-		if(ch == ' ') {
-			if(noctsh_string_empty(&stem)) {
-				continue;
-			}
+    if (ch == ' ') {
+      if (noctsh_string_empty(&stem)) {
+        continue;
+      }
 
-			noctsh_vector_push(&vec, noctsh_string_t, noctsh_string_clone_fast(stem));
+      noctsh_vector_push(&vec, noctsh_string_t, noctsh_string_clone_fast(stem));
 
-			noctsh_string_clear(&stem);
+      noctsh_string_clear(&stem);
 
-			continue;
-		} else if(ch == '\"') {
-			i++;
-			
-			while(i < len) {
-				ch = cmdline[i];
+      continue;
+    } else if (ch == '\"') {
+      i++;
 
-				if(ch != '\"') {
-					noctsh_string_push_char(&stem, ch);
-				} else {
-					break;
-				}
-				
-				i++;
-			}
+      while (i < len) {
+        ch = cmdline[i];
 
-			noctsh_vector_push(&vec, noctsh_string_t, noctsh_string_clone_fast(stem));
+        if (ch != '\"') {
+          noctsh_string_push_char(&stem, ch);
+        } else {
+          break;
+        }
 
-			noctsh_string_clear(&stem);
+        i++;
+      }
 
-			continue;
-		}
+      noctsh_vector_push(&vec, noctsh_string_t, noctsh_string_clone_fast(stem));
 
-		noctsh_string_push_char(&stem, ch);
-	}
+      noctsh_string_clear(&stem);
 
-	if(!noctsh_string_empty(&stem)) {
-		noctsh_vector_push(&vec, noctsh_string_t, stem);
-	}
+      continue;
+    }
 
-	return vec;
-}
+    noctsh_string_push_char(&stem, ch);
+  }
 
-int run_command(noctsh_vector_t parsed_cmdline) {
-	noctsh_vector_t argv = {};
+  if (!noctsh_string_empty(&stem)) {
+    noctsh_vector_push(&vec, noctsh_string_t, stem);
+  }
 
-	noctsh_vector_iter(&parsed_cmdline, noctsh_string_t) {
-		noctsh_vector_push(&argv, char*, noctsh_string_c_str(__iter.__element));
-	}
-
-	noctsh_vector_push(&argv, char*, NULL);
-
-	char** raw_argv = argv._m_buffer;
-
-	int procwd = fork();
-
-	if(procwd > 0) {
-		int status;
-		
-		waitpid(procwd, &status, 0);
-
-		noctsh_vector_free(&argv);
-
-		return status;
-	} else if(procwd == 0) {
-		int result = execvp(raw_argv[0], raw_argv);
-
-		exit(result);
-	}
-
-	__builtin_unreachable();
+  return vec;
 }
 
 void print_greeting() {
-	printf("Welcome to noct.sh v%d.%d!\n\n", NOCTSH_VERSION_MAJOR,
-				 NOCTSH_VERSION_MINOR);
+  printf("Welcome to noct.sh v%d.%d!\n\n", NOCTSH_VERSION_MAJOR,
+         NOCTSH_VERSION_MINOR);
 }
 
-void print_prompt() { printf("> "); }
+void print_prompt() {
+  char dirname[256] = {0};
 
-int main(int argc, char** argv) {
-	print_greeting();
+  getcwd(dirname, 255);
 
-	char buffer[512] = {0};
+  printf("%s > ", dirname);
 
-	// if(argc == 2) {
-	// 	char* cmd = argv[1];
+  fflush(stdout);
+}
 
-	// 	strcpy(buffer, cmd);
+int main(int argc, char **argv) {
+  print_greeting();
 
-	// 	noctsh_vector_t argv = parse_cmdline(buffer);
+  // TODO: Dynamic buffer
+  char buffer[512] = {0};
 
-	// 	noctsh_vector_iter(&argv, noctsh_string_t) {
-	// 		printf("[%zu]: `%s`\n", __iter.__index, noctsh_string_c_str(__iter.__element));
-	// 	}
+  while (1) {
+    print_prompt();
 
-	// 	noctsh_vector_iter(&argv, noctsh_string_t) {
-	// 		noctsh_string_free(__iter.__element);
-	// 	}
+    size_t cursor = request_input_string(buffer, 511);
 
-	// 	noctsh_vector_free(&argv);
+    if (cursor == (size_t)(-1)) {
+      return 0;
+    }
 
-	// 	return 0;
-	// }
+    noctsh_vector_t argv = parse_cmdline(buffer);
 
-	while (1) {
-		print_prompt();
+    int res = run_command(argv);
 
-		size_t cursor = request_input_string(buffer, 511);
+    printf("=> %x\n", res);
 
-		if (cursor == (size_t)(-1)) {
-			return 0;
-		}
+    if(res != 0) {
+      fprintf(stderr, "noctsh: %s\n", strerror(res));
+    }
 
-		printf("String is: `%s` (cursor = %zu)\n", buffer, cursor);
+    noctsh_vector_iter(&argv, noctsh_string_t) {
+      noctsh_string_free(__iter.__element);
+    }
 
-		noctsh_vector_t argv = parse_cmdline(buffer);
+    noctsh_vector_free(&argv);
 
-		noctsh_vector_iter(&argv, noctsh_string_t) {
-			printf("[%zu]: `%s`\n", __iter.__index, noctsh_string_c_str(__iter.__element));
-		}
+    memset(buffer, 0, 512);
+  }
 
-		int res = run_command(argv);
-
-		printf("=> %d\n", res);
-
-		noctsh_vector_iter(&argv, noctsh_string_t) {
-			noctsh_string_free(__iter.__element);
-		}
-
-		noctsh_vector_free(&argv);
-
-		memset(buffer, 0, 512);
-	}
-
-	return 0;
+  return 0;
 }
