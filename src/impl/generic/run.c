@@ -19,6 +19,7 @@ int run_command(noctsh_vector_t parsed_cmdline) {
 
   int procwd = fork();
 
+  // On the parent process
   if (procwd > 0) {
     int status;
 
@@ -26,18 +27,20 @@ int run_command(noctsh_vector_t parsed_cmdline) {
 
     noctsh_vector_free(&argv);
 
-    return WEXITSTATUS(status);
-  } else if (procwd == 0) {
-    int result = execvp(raw_argv[0], raw_argv);
+    return -WEXITSTATUS(status);
+  } else
+    // On the child process
+    if (procwd == 0) {
+      int result = execvp(raw_argv[0], raw_argv);
 
-    // printf("Execvp: %d\n", result);
+      // printf("Execvp: %d\n", result);
 
-    if(result == -1) {
-      exit(errno);
+      if (result == -1) {
+        exit(-errno);
+      }
+
+      exit(0);
     }
-
-    exit(0);
-  }
 
   __builtin_unreachable();
 }

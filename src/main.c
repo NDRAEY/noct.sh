@@ -10,6 +10,8 @@
 #include "noctsh_vector.h"
 #include "run.h"
 
+#include "builtins/common.h"
+
 size_t request_input_string(char *out_buffer, size_t maxlength) {
   size_t cursor = 0;
 
@@ -35,14 +37,17 @@ size_t request_input_string(char *out_buffer, size_t maxlength) {
         fputc(' ', stdout);
         fputc('\b', stdout);
 
-#if __nocturne__
         fflush(stdout);
-#endif
       }
 
       continue;
     }
 
+    if (character == '^[[D') {
+      cursor = cursor > 0 ? cursor - 1 : 0;
+    }
+
+    // FIXME: Insert a character instead of overwriting it.
     out_buffer[cursor++] = character;
   }
 
@@ -53,6 +58,10 @@ size_t request_input_string(char *out_buffer, size_t maxlength) {
 
 noctsh_vector_t parse_cmdline(const char *cmdline) {
   noctsh_vector_t vec = {};
+
+  if (strlen(cmdline) == 0) {
+    return vec;
+  }
 
   noctsh_string_t stem = {};
 
@@ -116,6 +125,9 @@ void print_prompt() {
   fflush(stdout);
 }
 
+extern const struct __noctsh_builtin __start_noctsh_builtins[];
+extern const struct __noctsh_builtin __stop_noctsh_builtins[];
+
 int main(int argc, char **argv) {
   print_greeting();
 
@@ -133,12 +145,40 @@ int main(int argc, char **argv) {
 
     noctsh_vector_t argv = parse_cmdline(buffer);
 
+    if (noctsh_vector_len(argv) == 0) {
+      continue;
+    }
+
+    char *argv0 = noctsh_string_c_str(NOCTSH_OPTION_UNWRAP(
+        noctsh_vector_get(&argv, noctsh_string_t, 0), noctsh_string_t));
+
+    bool is_matched_builtin = false;
+
+    // Look for the builtin, if builtin matches, use it.
+    for (const struct __noctsh_builtin *cur = __start_noctsh_builtins;
+         cur < __stop_noctsh_builtins; cur++) {
+      if (strcmp(cur->_name, argv0) == 0) {
+        int result = cur->_func(argv);
+
+        if (result < 0) {
+          fprintf(stderr, "noctsh: %s: %s\n", buffer, strerror(-result));
+        }
+
+        is_matched_builtin = true;
+        break;
+      }
+    }
+
+    if (is_matched_builtin)
+      continue;
+
+    // Run a program if no builtin there.
     int res = run_command(argv);
 
     printf("=> %x\n", res);
 
-    if(res != 0) {
-      fprintf(stderr, "noctsh: %s\n", strerror(res));
+    if (res < 0) {
+      fprintf(stderr, "noctsh: %s: %s\n", buffer, strerror(-res));
     }
 
     noctsh_vector_iter(&argv, noctsh_string_t) {
