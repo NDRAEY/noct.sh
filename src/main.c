@@ -10,7 +10,7 @@
 #include "noctsh_vector.h"
 #include "run.h"
 
-#include "builtins/common.h"
+#include "noctsh_builtins.h"
 
 size_t request_input_string(char *out_buffer, size_t maxlength) {
   size_t cursor = 0;
@@ -124,9 +124,6 @@ void print_prompt() {
 
   fflush(stdout);
 }
-
-extern const struct __noctsh_builtin __start_noctsh_builtins[];
-extern const struct __noctsh_builtin __stop_noctsh_builtins[];
 
 int main(int argc, char **argv) {
   print_greeting();

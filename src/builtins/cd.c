@@ -1,4 +1,4 @@
-#include "common.h"
+#include "noctsh_builtins.h"
 
 #include "noctsh_option.h"
 #include "noctsh_string.h"

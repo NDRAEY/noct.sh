@@ -13,3 +13,7 @@ struct __noctsh_builtin {
       ._name = #name,                                                          \
       ._func = func,                                                           \
   };
+
+
+extern const struct __noctsh_builtin __start_noctsh_builtins[];
+extern const struct __noctsh_builtin __stop_noctsh_builtins[];

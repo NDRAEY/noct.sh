@@ -2,7 +2,18 @@ cmake_minimum_required(VERSION 4.0.4)
 
 project(noct.sh VERSION 0.1.0 LANGUAGES C)
 
-set(BUILTINS_FILES src/builtins/cd.c)
+option(NOCTSH_BUILTIN_CD "Enable the `cd` command" ON)
+option(NOCTSH_BUILTIN_DIR "Enable the `dir` command" ON)
+
+set(BUILTIN_FILES src/builtins/help.c)
+
+if(NOCTSH_BUILTIN_CD)
+    set(BUILTIN_FILES ${BUILTIN_FILES} src/builtins/cd.c)
+endif()
+
+if(NOCTSH_BUILTIN_DIR)
+    set(BUILTIN_FILES ${BUILTIN_FILES} src/builtins/dir.c)
+endif()
 
 if(CMAKE_C_COMPILER MATCHES "-nocturne-")
     message("Compiling for NocturneOS")
@@ -24,7 +35,7 @@ add_executable(noctsh
     src/vector.c
 
     ${IMPL_FILES}
-    ${BUILTINS_FILES}
+    ${BUILTIN_FILES}
 )
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
