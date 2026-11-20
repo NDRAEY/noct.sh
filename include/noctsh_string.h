@@ -19,6 +19,8 @@ typedef struct {
 void noctsh_string_from_charptr(noctsh_string_t* string, const char* str);
 void noctsh_string_append(noctsh_string_t* string, const char* str);
 void noctsh_string_push_char(noctsh_string_t* string, char ch);
+char noctsh_string_pop_char(noctsh_string_t* string);
+void noctsh_string_insert(noctsh_string_t* string, size_t position, char ch);
 void noctsh_string_clone(noctsh_string_t* in_string, noctsh_string_t* out_string);
 void noctsh_string_clear(noctsh_string_t* string);
 void noctsh_string_free(noctsh_string_t* string);

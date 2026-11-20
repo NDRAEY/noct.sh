@@ -48,6 +48,30 @@ void noctsh_string_clone(noctsh_string_t* in_string, noctsh_string_t* out_string
     out_string->_m_length = in_string->_m_length;
 }
 
+char noctsh_string_pop_char(noctsh_string_t* string) {
+    if(string->_m_length == 0) {
+        return 0xFF;
+    }
+
+    char ch = string->_m_buffer[string->_m_length - 1];
+
+    string->_m_length--;
+    string->_m_buffer = realloc(string->_m_buffer, string->_m_length + 1);
+
+    return ch;
+}
+
+void noctsh_string_insert(noctsh_string_t* string, size_t position, char ch) {
+    size_t real_position = string->_m_length > position ? position : string->_m_length - 1;
+
+    string->_m_length++;
+    string->_m_buffer = realloc(string->_m_buffer, string->_m_length + 1);
+
+    memmove(string->_m_buffer + real_position + 1, string->_m_buffer + real_position, (string->_m_length - real_position) + 1);
+
+    string->_m_buffer[real_position] = ch;
+}
+
 void noctsh_string_clear(noctsh_string_t* string) {
     noctsh_string_free(string);
 }
