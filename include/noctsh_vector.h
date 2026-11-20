@@ -13,7 +13,7 @@
 
 /// Iterator for `noctsh_vector_t`. 
 #define noctsh_vector_iter(vec, T) for( \
-    struct { size_t __index, __len; T* __element } __iter = { .__index = 0, .__len = (vec)->_m_length, .__element = ((T*)((vec)->_m_buffer)) }; \
+    struct { size_t __index, __len; T* __element; } __iter = { .__index = 0, .__len = (vec)->_m_length, .__element = ((T*)((vec)->_m_buffer)) }; \
     __iter.__index < __iter.__len; \
     __iter.__element = ((T*)((vec)->_m_buffer)) + ++__iter.__index \
 )

@@ -43,9 +43,9 @@ size_t request_input_string(char *out_buffer, size_t maxlength) {
       continue;
     }
 
-    if (character == '^[[D') {
-      cursor = cursor > 0 ? cursor - 1 : 0;
-    }
+    // if (character == '^[[D') {
+    //   cursor = cursor > 0 ? cursor - 1 : 0;
+    // }
 
     // FIXME: Insert a character instead of overwriting it.
     out_buffer[cursor++] = character;
