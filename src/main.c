@@ -128,6 +128,22 @@ void print_prompt() {
 int main(int argc, char **argv) {
   print_greeting();
 
+  // {
+  //   noctsh_string_t str = {};
+
+  //   noctsh_string_insert_char(&str, 3, 'A');
+  //   noctsh_string_insert_char(&str, 3, 'B');
+  //   noctsh_string_insert_char(&str, 3, 'C');
+  //   noctsh_string_insert_char(&str, 3, 'D');
+  //   noctsh_string_insert_char(&str, 3, 'E');
+  //   noctsh_string_insert_char(&str, 3, 'F');
+  //   noctsh_string_insert_char(&str, 3, 'G');
+
+  //   printf("[%s]\n", noctsh_string_c_str(&str));
+
+  //   return 0;
+  // }
+
   // TODO: Dynamic buffer
   char buffer[512] = {0};
 

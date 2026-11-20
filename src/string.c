@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "noctsh_string.h"
@@ -61,11 +62,15 @@ char noctsh_string_pop_char(noctsh_string_t* string) {
     return ch;
 }
 
-void noctsh_string_insert(noctsh_string_t* string, size_t position, char ch) {
-    size_t real_position = string->_m_length > position ? position : string->_m_length - 1;
+void noctsh_string_insert_char(noctsh_string_t* string, size_t position, char ch) {
+    size_t real_position = string->_m_length < position ? string->_m_length : position;
+
+    printf("RP: %d\n", real_position);
 
     string->_m_length++;
     string->_m_buffer = realloc(string->_m_buffer, string->_m_length + 1);
+
+    string->_m_buffer[string->_m_length - 1] = 0;
 
     memmove(string->_m_buffer + real_position + 1, string->_m_buffer + real_position, (string->_m_length - real_position) + 1);
 
