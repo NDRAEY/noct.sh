@@ -1,4 +1,3 @@
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,18 +11,16 @@
 
 #include "noctsh_builtins.h"
 
-size_t request_input_string(char *out_buffer, size_t maxlength) {
+__attribute__((nonnull(1)))
+bool request_input_string(noctsh_string_t* str) {
   size_t cursor = 0;
 
   while (1) {
-    if (cursor > maxlength) {
-      return cursor;
-    }
-
     int character = fgetc(stdin);
 
     if (character == -1) {
-      return (size_t)(-1);
+      fputc('\n', stdout);
+      return true;
     }
 
     if (character == '\n') {
@@ -32,12 +29,14 @@ size_t request_input_string(char *out_buffer, size_t maxlength) {
 
     if (character == '\b') {
       if (cursor > 0) {
-        out_buffer[cursor--] = 0;
-
+        noctsh_string_pop_char(str);
+        
         fputc(' ', stdout);
         fputc('\b', stdout);
-
+        
         fflush(stdout);
+        
+        cursor--;
       }
 
       continue;
@@ -48,28 +47,33 @@ size_t request_input_string(char *out_buffer, size_t maxlength) {
     // }
 
     // FIXME: Insert a character instead of overwriting it.
-    out_buffer[cursor++] = character;
+    // out_buffer[cursor++] = character
+    noctsh_string_insert_char(str, cursor++, character);
   }
 
-  out_buffer[cursor] = 0;
+  // out_buffer[cursor] = 0;
 
-  return cursor;
+  return false;
 }
 
-noctsh_vector_t parse_cmdline(const char *cmdline) {
+noctsh_vector_t parse_cmdline(const noctsh_string_t *cmdline) {
   noctsh_vector_t vec = {};
 
-  if (strlen(cmdline) == 0) {
+  if(cmdline == NULL) {
+    return vec;
+  }
+
+  if (noctsh_string_is_empty(cmdline)) {
     return vec;
   }
 
   noctsh_string_t stem = {};
 
-  for (size_t i = 0, len = strlen(cmdline); i < len; i++) {
-    char ch = cmdline[i];
+  for (size_t i = 0, len = noctsh_string_length(cmdline); i < len; i++) {
+    char ch = noctsh_string_nth_char(cmdline, i);
 
     if (ch == ' ') {
-      if (noctsh_string_empty(&stem)) {
+      if (noctsh_string_is_empty(&stem)) {
         continue;
       }
 
@@ -82,7 +86,7 @@ noctsh_vector_t parse_cmdline(const char *cmdline) {
       i++;
 
       while (i < len) {
-        ch = cmdline[i];
+        ch = noctsh_string_nth_char(cmdline, i);
 
         if (ch != '\"') {
           noctsh_string_push_char(&stem, ch);
@@ -103,7 +107,7 @@ noctsh_vector_t parse_cmdline(const char *cmdline) {
     noctsh_string_push_char(&stem, ch);
   }
 
-  if (!noctsh_string_empty(&stem)) {
+  if (!noctsh_string_is_empty(&stem)) {
     noctsh_vector_push(&vec, noctsh_string_t, stem);
   }
 
@@ -128,38 +132,21 @@ void print_prompt() {
 int main(int argc, char **argv) {
   print_greeting();
 
-  // {
-  //   noctsh_string_t str = {};
-
-  //   noctsh_string_insert_char(&str, 3, 'A');
-  //   noctsh_string_insert_char(&str, 3, 'B');
-  //   noctsh_string_insert_char(&str, 3, 'C');
-  //   noctsh_string_insert_char(&str, 3, 'D');
-  //   noctsh_string_insert_char(&str, 3, 'E');
-  //   noctsh_string_insert_char(&str, 3, 'F');
-  //   noctsh_string_insert_char(&str, 3, 'G');
-
-  //   printf("[%s]\n", noctsh_string_c_str(&str));
-
-  //   return 0;
-  // }
-
-  // TODO: Dynamic buffer
-  char buffer[512] = {0};
+  noctsh_string_t str = {};
 
   while (1) {
     print_prompt();
 
-    size_t cursor = request_input_string(buffer, 511);
+    bool eof = request_input_string(&str);
 
-    if (cursor == (size_t)(-1)) {
+    if (eof) {
       return 0;
     }
 
-    noctsh_vector_t argv = parse_cmdline(buffer);
+    noctsh_vector_t argv = parse_cmdline(&str);
 
     if (noctsh_vector_len(argv) == 0) {
-      continue;
+      goto end;
     }
 
     char *argv0 = noctsh_string_c_str(NOCTSH_OPTION_UNWRAP(
@@ -174,7 +161,7 @@ int main(int argc, char **argv) {
         int result = cur->_func(argv);
 
         if (result < 0) {
-          fprintf(stderr, "noctsh: %s: %s\n", buffer, strerror(-result));
+          fprintf(stderr, "noctsh: %s: %s\n", noctsh_string_c_str(&str), strerror(result));
         }
 
         is_matched_builtin = true;
@@ -183,16 +170,18 @@ int main(int argc, char **argv) {
     }
 
     if (is_matched_builtin)
-      continue;
+      goto end;
 
     // Run a program if no builtin there.
     int res = run_command(argv);
 
-    printf("=> %x\n", res);
+    printf("exitcode => %d\n", res);
 
-    if (res < 0) {
-      fprintf(stderr, "noctsh: %s: %s\n", buffer, strerror(-res));
+    if (res > 0) {
+      fprintf(stderr, "noctsh: %s: %s\n", noctsh_string_c_str(&str), strerror(res));
     }
+
+    end:
 
     noctsh_vector_iter(&argv, noctsh_string_t) {
       noctsh_string_free(__iter.__element);
@@ -200,7 +189,7 @@ int main(int argc, char **argv) {
 
     noctsh_vector_free(&argv);
 
-    memset(buffer, 0, 512);
+    noctsh_string_clear(&str);
   }
 
   return 0;
