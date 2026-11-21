@@ -27,7 +27,7 @@ int run_command(noctsh_vector_t parsed_cmdline) {
 
     noctsh_vector_free(&argv);
 
-    return -WEXITSTATUS(status);
+    return WEXITSTATUS(status);
   } else
     // On the child process
     if (procwd == 0) {
@@ -36,7 +36,7 @@ int run_command(noctsh_vector_t parsed_cmdline) {
       // printf("Execvp: %d\n", result);
 
       if (result == -1) {
-        exit(-errno);
+        exit(errno);
       }
 
       exit(0);
