@@ -23,7 +23,6 @@ else()
     set(IMPL_FILES src/impl/generic/run.c)
 endif()
 
-
 add_executable(noctsh
     include/noctsh_string.h
 
@@ -38,6 +37,13 @@ add_executable(noctsh
     ${BUILTIN_FILES}
 )
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(noctsh PRIVATE
+    $<$<CONFIG:Debug>:-Wall -Wextra -Wpedantic -fsanitize=address,undefined -fno-omit-frame-pointer>)
+
+    target_link_options(noctsh PRIVATE $<$<CONFIG:Debug>:-fsanitize=address,undefined>)
+endif()
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fanalyzer")
 
 target_include_directories(noctsh PRIVATE ${CMAKE_SOURCE_DIR}/include)
