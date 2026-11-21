@@ -45,5 +45,7 @@ void _noctsh_vector_push(noctsh_vector_t* vec, size_t _element_size, void* eleme
 void noctsh_vector_free(noctsh_vector_t* vec) {
     vec->_m_length = 0;
     
-    free(vec->_m_buffer);
+    if(vec->_m_buffer != NULL) {
+        free(vec->_m_buffer);
+    }
 }
