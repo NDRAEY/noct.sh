@@ -3,10 +3,17 @@
 #include <string.h>
 #include "noctsh_string.h"
 
-void noctsh_string_from_charptr(noctsh_string_t *string, const char *str) {
+bool noctsh_string_from_charptr(noctsh_string_t *string, const char *str) {
+    if(str == NULL) {
+        return false;
+    }
+
     size_t length = strlen(str);
 
     char* buf = malloc(length + 1);
+    if(buf == NULL) {
+        return false;
+    }
 
     memcpy(buf, str, length);
 
@@ -14,6 +21,8 @@ void noctsh_string_from_charptr(noctsh_string_t *string, const char *str) {
 
     string->_m_buffer = buf;
     string->_m_length = length;
+
+    return true;
 }
 
 void noctsh_string_append(noctsh_string_t *string, const char *str) {
@@ -38,8 +47,16 @@ void noctsh_string_push_char(noctsh_string_t* string, char ch) {
     string->_m_buffer = new_buf;
 }
 
-void noctsh_string_clone(noctsh_string_t* in_string, noctsh_string_t* out_string) {
+bool noctsh_string_clone(noctsh_string_t* in_string, noctsh_string_t* out_string) {
+    if(in_string == NULL || out_string == NULL) {
+        return false;
+    }
+    
     char* cloned_buf = malloc(in_string->_m_length + 1);
+
+    if(cloned_buf == NULL) {
+        return false;
+    }
 
     memcpy(cloned_buf, in_string->_m_buffer, in_string->_m_length);
 
@@ -47,6 +64,8 @@ void noctsh_string_clone(noctsh_string_t* in_string, noctsh_string_t* out_string
 
     out_string->_m_buffer = cloned_buf;
     out_string->_m_length = in_string->_m_length;
+
+    return true;
 }
 
 char noctsh_string_pop_char(noctsh_string_t* string) {
@@ -57,24 +76,31 @@ char noctsh_string_pop_char(noctsh_string_t* string) {
     char ch = string->_m_buffer[string->_m_length - 1];
 
     string->_m_length--;
-    string->_m_buffer = realloc(string->_m_buffer, string->_m_length + 1);
+    string->_m_buffer[string->_m_length] = 0;
+
+    char* new_buf = realloc(string->_m_buffer, string->_m_length + 1);
+    if(new_buf != NULL) {
+        string->_m_buffer = new_buf;
+    }
 
     return ch;
 }
 
 void noctsh_string_insert_char(noctsh_string_t* string, size_t position, char ch) {
-    size_t real_position = string->_m_length < position ? string->_m_length : position;
+    size_t pos = position > string->_m_length ? string->_m_length : position;
 
-    printf("RP: %d\n", real_position);
+    char* buf = realloc(string->_m_buffer, string->_m_length + 2);
+    if(!buf) return;
 
+    string->_m_buffer = buf;
+
+    // Move only the characters after the insertion point; the terminator is
+    // written explicitly below so we never depend on an existing one.
+    memmove(buf + pos + 1, buf + pos, string->_m_length - pos);
+
+    buf[pos] = ch;
     string->_m_length++;
-    string->_m_buffer = realloc(string->_m_buffer, string->_m_length + 1);
-
-    string->_m_buffer[string->_m_length - 1] = 0;
-
-    memmove(string->_m_buffer + real_position + 1, string->_m_buffer + real_position, (string->_m_length - real_position) + 1);
-
-    string->_m_buffer[real_position] = ch;
+    buf[string->_m_length] = 0;
 }
 
 void noctsh_string_clear(noctsh_string_t* string) {
@@ -82,7 +108,9 @@ void noctsh_string_clear(noctsh_string_t* string) {
 }
 
 void noctsh_string_free(noctsh_string_t* string) {
-    free(string->_m_buffer);
+    if(string->_m_buffer!=NULL) {
+        free(string->_m_buffer);
+    }
 
     string->_m_buffer = NULL;
     string->_m_length = 0;
