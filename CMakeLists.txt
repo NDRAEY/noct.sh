@@ -44,6 +44,6 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     target_link_options(noctsh PRIVATE $<$<CONFIG:Debug>:-fsanitize=address,undefined>)
 endif()
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fanalyzer")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
 
 target_include_directories(noctsh PRIVATE ${CMAKE_SOURCE_DIR}/include)
